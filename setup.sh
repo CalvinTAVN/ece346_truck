@@ -16,13 +16,24 @@ echo -e "Workspace: $WS_DIR${NC}"
 echo ""
 
 # --- Step 1: Initialize submodules ---
-echo -e "${BLUE}[1/4] Initializing submodules...${NC}"
+echo -e "${BLUE}[1/5] Initializing submodules...${NC}"
 cd "$SCRIPT_DIR"
 git submodule update --init --recursive
 echo -e "${GREEN}Submodules initialized.${NC}"
 
-# --- Step 2: Install Logitech F710 driver ---
-echo -e "${BLUE}[2/4] Installing Logitech F710 driver...${NC}"
+# --- Step 2: Install udev rules ---
+echo -e "${BLUE}[2/5] Installing udev rules (VESC, Pololu, SLabs)...${NC}"
+if [ -d "$SCRIPT_DIR/udev" ]; then
+    sudo cp $SCRIPT_DIR/udev/*.rules /etc/udev/rules.d/
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+    echo -e "${GREEN}udev rules installed. VESC will appear at /dev/sensors/vesc.${NC}"
+else
+    echo -e "${RED}udev directory not found.${NC}"
+fi
+
+# --- Step 3: Install Logitech F710 driver ---
+echo -e "${BLUE}[3/5] Installing Logitech F710 driver...${NC}"
 JETPACK_VERSION=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-core 2>/dev/null | cut -f1 -d'-' | cut -f1 -d'.')
 
 if [ -d "$SCRIPT_DIR/drivers/logitech-f710-module" ]; then
@@ -39,8 +50,8 @@ else
     echo -e "${RED}Logitech driver submodule not found. Run 'git submodule update --init --recursive' first.${NC}"
 fi
 
-# --- Step 3: Install ROS2 dependencies ---
-echo -e "${BLUE}[3/4] Installing ROS2 dependencies...${NC}"
+# --- Step 4: Install ROS2 dependencies ---
+echo -e "${BLUE}[4/5] Installing ROS2 dependencies...${NC}"
 cd "$WS_DIR"
 if command -v rosdep &> /dev/null; then
     rosdep install --from-paths src --ignore-src -r -y 2>/dev/null || true
@@ -49,8 +60,8 @@ else
     echo -e "${RED}rosdep not found. Make sure ROS2 Foxy is sourced.${NC}"
 fi
 
-# --- Step 4: Build the workspace ---
-echo -e "${BLUE}[4/4] Building ROS2 workspace...${NC}"
+# --- Step 5: Build the workspace ---
+echo -e "${BLUE}[5/5] Building ROS2 workspace...${NC}"
 cd "$WS_DIR"
 source /opt/ros/foxy/setup.bash 2>/dev/null || true
 colcon build --symlink-install
