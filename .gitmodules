@@ -10,3 +10,6 @@
 	path = teleop_tools
 	url = https://github.com/f1tenth/teleop_tools.git
 	branch = foxy-devel
+[submodule "drivers/logitech-f710-module"]
+	path = drivers/logitech-f710-module
+	url = https://github.com/jetsonhacks/logitech-f710-module.git
