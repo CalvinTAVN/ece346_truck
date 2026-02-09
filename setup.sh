@@ -15,14 +15,47 @@ echo -e "Repo:      $SCRIPT_DIR"
 echo -e "Workspace: $WS_DIR${NC}"
 echo ""
 
-# --- Step 1: Initialize submodules ---
-echo -e "${BLUE}[1/5] Initializing submodules...${NC}"
+# --- Step 1: Install ROS2 Foxy ---
+echo -e "${BLUE}[1/7] Checking ROS2 Foxy installation...${NC}"
+if [ -d "/opt/ros/foxy" ]; then
+    echo -e "${GREEN}ROS2 Foxy already installed.${NC}"
+else
+    echo "Installing ROS2 Foxy..."
+
+    sudo apt update && sudo apt install -y locales
+    sudo locale-gen en_US en_US.UTF-8
+    sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+    export LANG=en_US.UTF-8
+
+    sudo apt install -y software-properties-common curl
+    sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+    sudo apt update
+    sudo apt install -y ros-foxy-desktop
+
+    echo -e "${GREEN}ROS2 Foxy installed.${NC}"
+fi
+
+source /opt/ros/foxy/setup.bash
+
+# --- Step 2: Install build tools ---
+echo -e "${BLUE}[2/7] Installing build tools...${NC}"
+sudo apt install -y python3-colcon-common-extensions python3-rosdep python3-vcstool
+if [ ! -f "/etc/ros/rosdep/sources.list.d/20-default.list" ]; then
+    sudo rosdep init || true
+fi
+rosdep update
+echo -e "${GREEN}Build tools installed.${NC}"
+
+# --- Step 3: Initialize submodules ---
+echo -e "${BLUE}[3/7] Initializing submodules...${NC}"
 cd "$SCRIPT_DIR"
 git submodule update --init --recursive
 echo -e "${GREEN}Submodules initialized.${NC}"
 
-# --- Step 2: Install udev rules ---
-echo -e "${BLUE}[2/5] Installing udev rules (VESC, Pololu, SLabs)...${NC}"
+# --- Step 4: Install udev rules ---
+echo -e "${BLUE}[4/7] Installing udev rules (VESC, Pololu, SLabs)...${NC}"
 if [ -d "$SCRIPT_DIR/udev" ]; then
     sudo cp $SCRIPT_DIR/udev/*.rules /etc/udev/rules.d/
     sudo udevadm control --reload-rules
@@ -32,8 +65,8 @@ else
     echo -e "${RED}udev directory not found.${NC}"
 fi
 
-# --- Step 3: Install Logitech F710 driver ---
-echo -e "${BLUE}[3/5] Installing Logitech F710 driver...${NC}"
+# --- Step 5: Install Logitech F710 driver ---
+echo -e "${BLUE}[5/7] Installing Logitech F710 driver...${NC}"
 JETPACK_VERSION=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-core 2>/dev/null | cut -f1 -d'-' | cut -f1 -d'.')
 
 if [ -d "$SCRIPT_DIR/drivers/logitech-f710-module" ]; then
@@ -47,26 +80,23 @@ if [ -d "$SCRIPT_DIR/drivers/logitech-f710-module" ]; then
         echo -e "${GREEN}Logitech F710 driver installed. Cold boot required for it to take effect.${NC}"
     fi
 else
-    echo -e "${RED}Logitech driver submodule not found. Run 'git submodule update --init --recursive' first.${NC}"
+    echo -e "${RED}Logitech driver submodule not found.${NC}"
 fi
 
-# --- Step 4: Install ROS2 dependencies ---
-echo -e "${BLUE}[4/5] Installing ROS2 dependencies...${NC}"
+# --- Step 6: Install ROS2 dependencies ---
+echo -e "${BLUE}[6/7] Installing ROS2 dependencies...${NC}"
 cd "$WS_DIR"
-if command -v rosdep &> /dev/null; then
-    rosdep install --from-paths src --ignore-src -r -y 2>/dev/null || true
-    echo -e "${GREEN}ROS2 dependencies installed.${NC}"
-else
-    echo -e "${RED}rosdep not found. Make sure ROS2 Foxy is sourced.${NC}"
-fi
+sudo apt install -y ros-foxy-joy-linux ros-foxy-ackermann-msgs ros-foxy-joy-teleop 2>/dev/null || true
+rosdep install --from-paths src --ignore-src -r -y 2>/dev/null || true
+echo -e "${GREEN}ROS2 dependencies installed.${NC}"
 
-# --- Step 5: Build the workspace ---
-echo -e "${BLUE}[5/5] Building ROS2 workspace...${NC}"
+# --- Step 7: Build the workspace ---
+echo -e "${BLUE}[7/7] Building ROS2 workspace...${NC}"
 cd "$WS_DIR"
-source /opt/ros/foxy/setup.bash 2>/dev/null || true
 colcon build --symlink-install
 echo -e "${GREEN}Build complete.${NC}"
 
 echo ""
 echo -e "${GREEN}=== Setup Complete ==="
-echo -e "To use, run: source $WS_DIR/install/setup.bash${NC}"
+echo -e "To use, run: source $WS_DIR/install/setup.bash"
+echo -e "NOTE: Cold boot required for Logitech F710 driver to take effect.${NC}"
