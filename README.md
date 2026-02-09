@@ -1,9 +1,81 @@
-# f1tenth_system
+# ece346_truck
 
-Drivers onboard f1tenth race cars. This branch is under development for migration to ROS2. See the [documentation of F1TENTH](https://f1tenth.readthedocs.io/en/foxy_test/getting_started/firmware/index.html) on how to get started.
+Modified f1tenth driver stack for ECE346 trucks. Uses ROS2 Foxy with a PS4 DualShock controller over Bluetooth.
+
+## New Truck Setup
+
+### 1. Flash JetPack on the Jetson
+
+### 2. Set up Bluetooth (PS4 Controller)
+
+Unblock Bluetooth and make it persistent across reboots:
+```bash
+sudo rfkill unblock bluetooth
+sudo systemctl daemon-reload
+sudo systemctl enable bluetooth
+sudo systemctl restart bluetooth
+```
+
+Create a systemd service so Bluetooth is always unblocked on boot:
+```bash
+sudo bash -c 'cat > /etc/systemd/system/bluetooth-unblock.service << EOF
+[Unit]
+Description=Unblock Bluetooth
+Before=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/rfkill unblock bluetooth
+
+[Install]
+WantedBy=multi-user.target
+EOF'
+sudo systemctl enable bluetooth-unblock.service
+sudo systemctl start bluetooth-unblock.service
+```
+
+Pair the PS4 controller:
+```bash
+sudo bluetoothctl
+power on
+agent on
+scan on
+# Put PS4 controller in pairing mode: hold Share + PS button until light bar flashes rapidly
+# Find "Wireless Controller" in the scan results and note its MAC address
+pair XX:XX:XX:XX:XX:XX
+trust XX:XX:XX:XX:XX:XX
+connect XX:XX:XX:XX:XX:XX
+exit
+```
+
+Verify it shows up:
+```bash
+ls /dev/input/js0
+```
+
+After trusting the controller, it will auto-reconnect on future boots when you press the PS button.
+
+### 3. Clone and build
+```bash
+mkdir -p ~/foxy_ece346/src
+cd ~/foxy_ece346/src
+git clone --recurse-submodules https://github.com/CalvinTAVN/ece346_truck.git f1tenth_system
+cd f1tenth_system
+./setup.sh
+```
+
+### 4. Cold boot
+Required for the Logitech F710 kernel module to load. Reboot the Jetson after setup completes.
+
+### 5. Test
+```bash
+source ~/foxy_ece346/install/setup.bash
+sudo apt install -y jstest-gtk
+jstest /dev/input/js0
+```
 
 ## Deadman's switch
-On Logitech F-710 joysticks, the LB button is the deadman's switch for teleop, and the RB button is the deadman's switch for navigation. You can also remap buttons. See how on the readthedocs documentation.
+On the PS4 controller, L2 is the deadman's switch for teleop, and R2 is the deadman's switch for autonomous navigation. You can remap buttons in `f1tenth_stack/config/joy_teleop.yaml`.
 
 ## Topics
 
