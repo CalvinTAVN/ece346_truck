@@ -17,6 +17,10 @@ echo ""
 
 # --- Step 1: Install ROS2 Foxy ---
 echo -e "${BLUE}[1/7] Checking ROS2 Foxy installation...${NC}"
+
+# Refresh ROS GPG key (fixes expired key errors)
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+
 if [ -d "/opt/ros/foxy" ]; then
     echo -e "${GREEN}ROS2 Foxy already installed.${NC}"
 else
