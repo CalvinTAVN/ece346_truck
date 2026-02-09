@@ -69,27 +69,32 @@ else
     echo -e "${RED}udev directory not found.${NC}"
 fi
 
-# --- Step 5: Install Logitech F710 driver ---
-echo -e "${BLUE}[5/7] Installing Logitech F710 driver...${NC}"
-JETPACK_VERSION=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-core 2>/dev/null | cut -f1 -d'-' | cut -f1 -d'.')
+# --- Step 5: Install Logitech F710 driver (optional) ---
+echo -e "${BLUE}[5/7] Logitech F710 driver (optional)...${NC}"
+read -p "Are you using a Logitech F710 controller? [y/N] " install_logitech
+if [[ "$install_logitech" =~ ^[Yy]$ ]]; then
+    JETPACK_VERSION=$(dpkg-query --showformat='${Version}' --show nvidia-l4t-core 2>/dev/null | cut -f1 -d'-' | cut -f1 -d'.')
 
-if [ -d "$SCRIPT_DIR/drivers/logitech-f710-module" ]; then
-    cd "$SCRIPT_DIR/drivers/logitech-f710-module"
-    if [ "$JETPACK_VERSION" -ge 36 ] 2>/dev/null; then
-        echo -e "${RED}JetPack 6 detected. Logitech F710 requires kernel replacement."
-        echo -e "See drivers/logitech-f710-module/JetPack6/README.md for instructions.${NC}"
-    else
-        echo "Running install-module.sh..."
-        sudo ./install-module.sh
-        # Make the module load automatically on boot
-        if ! grep -q "hid-logitech" /etc/modules 2>/dev/null; then
-            echo "hid-logitech" | sudo tee -a /etc/modules
+    if [ -d "$SCRIPT_DIR/drivers/logitech-f710-module" ]; then
+        cd "$SCRIPT_DIR/drivers/logitech-f710-module"
+        if [ "$JETPACK_VERSION" -ge 36 ] 2>/dev/null; then
+            echo -e "${RED}JetPack 6 detected. Logitech F710 requires kernel replacement."
+            echo -e "See drivers/logitech-f710-module/JetPack6/README.md for instructions.${NC}"
+        else
+            echo "Running install-module.sh..."
+            sudo ./install-module.sh
+            # Make the module load automatically on boot
+            if ! grep -q "hid-logitech" /etc/modules 2>/dev/null; then
+                echo "hid-logitech" | sudo tee -a /etc/modules
+            fi
+            sudo depmod -a
+            echo -e "${GREEN}Logitech F710 driver installed and set to load on boot. Cold boot required.${NC}"
         fi
-        sudo depmod -a
-        echo -e "${GREEN}Logitech F710 driver installed and set to load on boot. Cold boot required.${NC}"
+    else
+        echo -e "${RED}Logitech driver submodule not found.${NC}"
     fi
 else
-    echo -e "${RED}Logitech driver submodule not found.${NC}"
+    echo -e "${GREEN}Skipping Logitech F710 driver (using Bluetooth controller).${NC}"
 fi
 
 # --- Step 6: Install ROS2 dependencies ---
