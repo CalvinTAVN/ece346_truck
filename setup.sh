@@ -110,7 +110,7 @@ sudo apt install -y \
     ros-foxy-serial-driver \
     ros-foxy-urg-node \
     2>/dev/null || true
-rosdep install --from-paths src -i -y || true
+rosdep install --from-paths src -i -y --skip-keys=test_msgs || true
 echo -e "${GREEN}ROS2 dependencies installed.${NC}"
 
 # --- Step 7: Build the workspace ---
