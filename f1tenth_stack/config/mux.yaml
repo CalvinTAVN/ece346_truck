@@ -4,8 +4,13 @@ ackermann_mux:
       navigation:
         topic   : drive
         timeout : 0.2
-        priority: 10
+        priority: 200
       joystick:
         topic   : teleop
         timeout : 0.2
+        priority: 10
+    locks:
+      autonomous:
+        topic   : autonomous_lock
+        timeout : 0.0
         priority: 100
