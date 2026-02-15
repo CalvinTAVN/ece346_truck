@@ -111,6 +111,10 @@ sudo apt install -y \
     ros-foxy-urg-node \
     2>/dev/null || true
 rosdep install --from-paths src -i -y --skip-keys=test_msgs || true
+
+# Install Python dependencies (pin pyzmq for Python 3.8 compatibility)
+pip3 install --no-cache-dir "pyzmq==25.1.2" || sudo apt-get install -y python3-zmq
+
 echo -e "${GREEN}ROS2 dependencies installed.${NC}"
 
 # --- Step 7: Build the workspace ---
