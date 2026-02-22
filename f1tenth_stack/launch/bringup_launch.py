@@ -100,7 +100,8 @@ def generate_launch_description():
         package='vesc_driver',
         executable='vesc_driver_node',
         name='vesc_driver_node',
-        parameters=[LaunchConfiguration('vesc_config')]
+        parameters=[LaunchConfiguration('vesc_config')],
+        arguments=['--ros-args', '--log-level', 'warn']
     )
     throttle_interpolator_node = Node(
         package='f1tenth_stack',
