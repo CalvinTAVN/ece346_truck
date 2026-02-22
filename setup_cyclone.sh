@@ -20,6 +20,14 @@ if [ -f "/opt/ros/foxy/setup.bash" ]; then
     source /opt/ros/foxy/setup.bash
 fi
 
+# Source workspace install if available (check relative to this script)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+if [ -f "${SCRIPT_DIR}/install/setup.bash" ]; then
+    source "${SCRIPT_DIR}/install/setup.bash"
+elif [ -f "/ros2_ws/install/setup.bash" ]; then
+    source /ros2_ws/install/setup.bash
+fi
+
 # Get own IP for local discovery
 OWN_IP=$(hostname -I | awk '{print $1}')
 
