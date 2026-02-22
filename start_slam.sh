@@ -25,7 +25,7 @@ echo -e "${GREEN}ROS1 sourced.${NC}"
 
 # --- Launch SLAM in background ---
 echo -e "${BLUE}[2/4] Launching AprilTag SLAM...${NC}"
-roslaunch /home/nvidia/StartUp/src/AprilTagSLAM_ROS/launch/zed_zdk.launch &
+roslaunch /home/nvidia/StartUp/src/AprilTagSLAM_ROS/launch/zed_sdk.launch &
 SLAM_PID=$!
 
 # --- Wait for SLAM service to be available ---
