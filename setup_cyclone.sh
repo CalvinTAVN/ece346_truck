@@ -19,10 +19,11 @@ cat > "$CONFIG_FILE" <<EOF
 <CycloneDDS>
   <Domain>
     <General>
-      <AllowMulticast>false</AllowMulticast>
+      <AllowMulticast>spdp</AllowMulticast>
     </General>
     <Discovery>
       <Peers>
+        <Peer address="localhost"/>
         <Peer address="${PEER_IP}"/>
       </Peers>
     </Discovery>
