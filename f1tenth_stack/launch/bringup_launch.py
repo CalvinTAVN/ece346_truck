@@ -130,7 +130,7 @@ def generate_launch_description():
 
     # ZMQ bridge: receives SLAM odometry from ROS1 via ZMQ
     # Navigate from f1tenth_stack source dir to slam_tools in repo root
-    repo_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    repo_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     slam_bridge_script = os.path.join(repo_dir, 'slam_tools', 'odom_ros2_zmq_sub.py')
     slam_bridge_node = ExecuteProcess(
         cmd=['python3', slam_bridge_script],
