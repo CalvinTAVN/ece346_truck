@@ -15,6 +15,9 @@ PEER_IP="$1"
 DOMAIN_ID="$2"
 CONFIG_FILE="/tmp/cyclonedds.xml"
 
+# Get own IP for local discovery
+OWN_IP=$(hostname -I | awk '{print $1}')
+
 cat > "$CONFIG_FILE" <<EOF
 <CycloneDDS>
   <Domain>
@@ -23,7 +26,7 @@ cat > "$CONFIG_FILE" <<EOF
     </General>
     <Discovery>
       <Peers>
-        <Peer address="localhost"/>
+        <Peer address="${OWN_IP}"/>
         <Peer address="${PEER_IP}"/>
       </Peers>
     </Discovery>
