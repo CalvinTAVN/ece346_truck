@@ -30,7 +30,7 @@ SLAM_PID=$!
 
 # --- Wait for SLAM service to be available ---
 echo -e "${BLUE}[3/4] Waiting for SLAM service...${NC}"
-until rosservice list 2>/dev/null | grep -q "/SLAM/Start_slam"; do
+until rosservice list 2>/dev/null | grep -q "/SLAM/start_slam"; do
     sleep 1
     echo -n "."
     # Check if SLAM process is still alive
@@ -41,7 +41,7 @@ until rosservice list 2>/dev/null | grep -q "/SLAM/Start_slam"; do
 done
 echo ""
 sleep 2  # Extra wait for service to be fully ready
-rosservice call /SLAM/Start_slam
+rosservice call /SLAM/start_slam
 echo -e "${GREEN}SLAM started.${NC}"
 
 # --- Run ROS1 ZMQ bridge (foreground) ---
