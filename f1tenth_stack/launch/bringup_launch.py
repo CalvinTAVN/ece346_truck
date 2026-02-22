@@ -26,6 +26,7 @@ from launch.substitutions import Command
 from launch.substitutions import LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
 from launch.actions import IncludeLaunchDescription
+from launch.actions import ExecuteProcess
 from launch_xml.launch_description_sources import XMLLaunchDescriptionSource
 from ament_index_python.packages import get_package_share_directory
 import os
@@ -127,6 +128,16 @@ def generate_launch_description():
         arguments=['0.27', '0.0', '0.11', '0.0', '0.0', '0.0', 'base_link', 'laser']
     )
 
+    # ZMQ bridge: receives SLAM odometry from ROS1 via ZMQ
+    # Navigate from f1tenth_stack source dir to slam_tools in repo root
+    repo_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    slam_bridge_script = os.path.join(repo_dir, 'slam_tools', 'odom_ros2_zmq_sub.py')
+    slam_bridge_node = ExecuteProcess(
+        cmd=['python3', slam_bridge_script],
+        name='odom_zmq_ros2_bridge',
+        output='screen'
+    )
+
     # finalize
     ld.add_action(joy_node)
     ld.add_action(joy_teleop_node)
@@ -137,5 +148,6 @@ def generate_launch_description():
     #ld.add_action(urg_node)
     ld.add_action(ackermann_mux_node)
     ld.add_action(static_tf_node)
+    ld.add_action(slam_bridge_node)
 
     return ld

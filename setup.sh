@@ -109,6 +109,7 @@ sudo apt install -y \
     ros-foxy-diagnostic-updater \
     ros-foxy-serial-driver \
     ros-foxy-urg-node \
+    ros-foxy-rmw-cyclonedds-cpp \
     2>/dev/null || true
 rosdep install --from-paths src -i -y --skip-keys=test_msgs || true
 
