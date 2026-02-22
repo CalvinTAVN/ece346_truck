@@ -15,6 +15,11 @@ PEER_IP="$1"
 DOMAIN_ID="$2"
 CONFIG_FILE="/tmp/cyclonedds.xml"
 
+# Source ROS2 Foxy if available
+if [ -f "/opt/ros/foxy/setup.bash" ]; then
+    source /opt/ros/foxy/setup.bash
+fi
+
 # Get own IP for local discovery
 OWN_IP=$(hostname -I | awk '{print $1}')
 
