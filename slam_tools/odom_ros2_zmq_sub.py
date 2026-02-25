@@ -63,7 +63,7 @@ def _fill(m: Odometry, d: dict):
 
 
 class Bridge(Node):
-    def __init__(self, host="192.168.1.202", port=5560, out_topic="/SLAM/Pose", publish_hz=60.0):
+    def __init__(self, host="127.0.0.1", port=5560, out_topic="/SLAM/Pose", publish_hz=60.0):
         super().__init__("odom_zmq_ros2_bridge")
 
         self.pub = self.create_publisher(Odometry, out_topic, 10)
