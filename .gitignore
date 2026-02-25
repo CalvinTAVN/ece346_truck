@@ -36,3 +36,8 @@
 
 # py
 *.pyc
+
+# colcon workspace artifacts
+build/
+install/
+log/

@@ -57,10 +57,9 @@ After trusting the controller, it will auto-reconnect on future boots when you p
 
 ### 3. Clone and build
 ```bash
-mkdir -p ~/foxy_ece346/src
-cd ~/foxy_ece346/src
-git clone --recurse-submodules https://github.com/CalvinTAVN/ece346_truck.git f1tenth_system
-cd f1tenth_system
+cd ~
+git clone --recurse-submodules https://github.com/CalvinTAVN/ece346_truck.git
+cd ece346_truck
 ./setup.sh
 ```
 
@@ -69,7 +68,7 @@ Required for the Logitech F710 kernel module to load. Reboot the Jetson after se
 
 ### 5. Test
 ```bash
-source ~/foxy_ece346/install/setup.bash
+source ~/ece346_truck/install/setup.bash
 sudo apt install -y jstest-gtk
 jstest /dev/input/js0
 ```

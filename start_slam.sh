@@ -17,6 +17,9 @@ NC='\033[0m'
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+# --- Unblock Bluetooth for PS4 controller ---
+sudo rfkill unblock bluetooth
+
 # --- Source ROS1 ---
 echo -e "${BLUE}[1/4] Sourcing ROS1 Noetic...${NC}"
 source /opt/ros/noetic/setup.bash
