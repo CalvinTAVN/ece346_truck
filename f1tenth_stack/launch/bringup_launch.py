@@ -80,6 +80,7 @@ def generate_launch_description():
         name='ackermann_to_vesc_node',
         parameters=[LaunchConfiguration('vesc_config')],
         remappings=[
+            ('ackermann_cmd', 'ackermann_drive'),
             ('commands/motor/speed', 'commands/motor/unsmoothed_speed'),
             ('commands/servo/position', 'commands/servo/unsmoothed_position'),
         ]
