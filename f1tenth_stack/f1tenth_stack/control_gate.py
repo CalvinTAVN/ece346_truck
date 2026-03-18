@@ -63,10 +63,19 @@ class ControlGate(Node):
         self.last_joy_time = self.get_clock().now()
         self.joy_alive = True
 
+        prev_l2 = self.l2_pressed
+        prev_r2 = self.r2_pressed
+
         if self.l2_button < len(msg.buttons):
             self.l2_pressed = bool(msg.buttons[self.l2_button])
         if self.r2_button < len(msg.buttons):
             self.r2_pressed = bool(msg.buttons[self.r2_button])
+
+        # If we just left an active mode, send zero to stop motors
+        was_active = (prev_l2 and not prev_r2) or (prev_r2 and not prev_l2)
+        is_active = (self.l2_pressed and not self.r2_pressed) or (self.r2_pressed and not self.l2_pressed)
+        if was_active and not is_active:
+            self.pub.publish(self._make_zero())
 
     def teleop_callback(self, msg: AckermannDriveStamped):
         self.last_teleop = msg
