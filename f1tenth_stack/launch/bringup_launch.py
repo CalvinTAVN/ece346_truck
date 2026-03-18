@@ -47,11 +47,6 @@ def generate_launch_description():
         'config',
         'sensors.yaml'
     )
-    mux_config = os.path.join(
-        get_package_share_directory('f1tenth_stack'),
-        'config',
-        'mux.yaml'
-    )
 
     joy_la = DeclareLaunchArgument(
         'joy_config',
@@ -65,12 +60,7 @@ def generate_launch_description():
         'sensors_config',
         default_value=sensors_config,
         description='Descriptions for sensor configs')
-    mux_la = DeclareLaunchArgument(
-        'mux_config',
-        default_value=mux_config,
-        description='Descriptions for ackermann mux configs')
-
-    ld = LaunchDescription([joy_la, vesc_la, sensors_la, mux_la])
+    ld = LaunchDescription([joy_la, vesc_la, sensors_la])
 
     joy_node = Node(
         package='joy_linux',
@@ -119,12 +109,11 @@ def generate_launch_description():
         name='urg_node',
         parameters=[LaunchConfiguration('sensors_config')]
     )
-    ackermann_mux_node = Node(
-        package='ackermann_mux',
-        executable='ackermann_mux',
-        name='ackermann_mux',
-        parameters=[LaunchConfiguration('mux_config')],
-        remappings=[('ackermann_cmd_out', 'ackermann_drive')]
+    control_gate_node = Node(
+        package='f1tenth_stack',
+        executable='control_gate',
+        name='control_gate',
+        parameters=[{'l2_button': 6, 'r2_button': 5, 'joy_timeout': 0.5}]
     )
     static_tf_node = Node(
         package='tf2_ros',
@@ -151,7 +140,7 @@ def generate_launch_description():
     ld.add_action(vesc_driver_node)
     ld.add_action(throttle_interpolator_node)
     #ld.add_action(urg_node)
-    ld.add_action(ackermann_mux_node)
+    ld.add_action(control_gate_node)
     ld.add_action(static_tf_node)
     ld.add_action(slam_bridge_node)
 
