@@ -36,7 +36,7 @@ def _fill(m: Odometry, d: dict):
 
     m.pose.pose.position.x = float(pos.get("x", 0.0))
     m.pose.pose.position.y = float(pos.get("y", 0.0))
-    m.pose.pose.position.z = float(pos.get("z", 0.0))
+    m.pose.pose.position.z = 0.0  # ground vehicle — clamp Z to 0
 
     m.pose.pose.orientation.x = float(ori.get("x", 0.0))
     m.pose.pose.orientation.y = float(ori.get("y", 0.0))
