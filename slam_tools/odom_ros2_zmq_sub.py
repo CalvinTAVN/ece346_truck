@@ -9,7 +9,8 @@ import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from builtin_interfaces.msg import Time
-from geometry_msgs.msg import Pose, Point
+from geometry_msgs.msg import Pose, Point, TransformStamped
+from tf2_ros import TransformBroadcaster
 from racecar_msgs.msg import AprilTagDetection, AprilTagDetectionArray
 
 
@@ -109,6 +110,7 @@ class Bridge(Node):
 
         self.pub = self.create_publisher(Odometry, out_topic, 10)
         self.tag_pub = self.create_publisher(AprilTagDetectionArray, tag_out_topic, 10)
+        self.tf_broadcaster = TransformBroadcaster(self)
 
         self._lock = threading.Lock()
         self._latest: Optional[dict] = None
@@ -198,6 +200,19 @@ class Bridge(Node):
                 if not self._logged_first_tx:
                     self._logged_first_tx = True
                     self.get_logger().info(f"tx odom: first publish stamp={st}")
+
+                # Broadcast map -> base_link TF so RViz can display the
+                # truck and all map-frame markers without "frame does not exist" errors.
+                t = TransformStamped()
+                t.header.stamp = msg.header.stamp
+                t.header.frame_id = "map"
+                t.child_frame_id = "base_link"
+                t.transform.translation.x = msg.pose.pose.position.x
+                t.transform.translation.y = msg.pose.pose.position.y
+                t.transform.translation.z = msg.pose.pose.position.z
+                t.transform.rotation = msg.pose.pose.orientation
+                self.tf_broadcaster.sendTransform(t)
+
             except Exception:
                 pass
 
