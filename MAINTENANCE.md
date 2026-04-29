@@ -99,6 +99,64 @@ The launch file (`zed_sdk.launch`) overrides `load_path` with
 `$(find tagslam_ros)/config/track_landmark.g2o`. You do not normally need to
 change this.
 
+### 2d. Adding new landmark AprilTags to the prior map
+
+> ⚠️ **Required whenever new physical AprilTags are added to the track for
+> localization.**
+
+The prior map lives on the Jetson at:
+```
+~/StartUp/src/AprilTagSLAM_ROS/config/track_landmark.g2o
+```
+(This is the same file as `track_landmark.g2o` in the `apriltag_slam_zixu`
+repo on the host at `/home/calvin/Documents/apriltag_slam_zixu/AprilTagSLAM_ROS/config/`.)
+
+**Step 1 — Add the new tag vertices to the `.g2o` file.**
+
+Each landmark is a line of the form:
+```
+VERTEX_SE3:QUAT l <id> <x> <y> <z> <qx> <qy> <qz> <qw>
+```
+Example (IDs 33–38 added to the south wall):
+```
+VERTEX_SE3:QUAT l 33 5.558 6.327 0.380  0.702 -0.004  0.007 0.712
+VERTEX_SE3:QUAT l 34 7.125 1.928 0.615  0.504 -0.506 -0.487 0.503
+```
+Append these lines to `track_landmark.g2o` before the existing `EDGE_*`
+lines (or at the end of the vertex block).
+
+**Step 2 — Update `config.yaml` so SLAM treats the new IDs as landmarks,
+not obstacles.**
+
+On the Jetson:
+```bash
+nano ~/StartUp/src/AprilTagSLAM_ROS/config/config.yaml
+```
+Extend `landmark_tags` to cover the new IDs and push the `ignore_tags` start
+up correspondingly:
+```yaml
+landmark_tags: [
+    {id_start: 2, id_end: 38, tag_size: 0.259},   # ← extended from 26 to 38
+    ...
+]
+ignore_tags: [
+    {id_start: 39, id_end: 99, tag_size: 0.2},    # ← start at 39
+    ...
+]
+```
+
+> Obstacle detection tags (used in FinalProject) should be in the
+> **`ignore_tags`** range (currently 39–99 after the above change). Do not
+> overlap landmark IDs with obstacle IDs.
+
+**Step 3 — SCP the updated `.g2o` to all trucks.**
+```bash
+scp ~/StartUp/src/AprilTagSLAM_ROS/config/track_landmark.g2o \
+    nvidia@192.168.1.2XX:~/StartUp/src/AprilTagSLAM_ROS/config/track_landmark.g2o
+```
+
+**Step 4 — Restart SLAM** on each truck so it reloads the updated map.
+
 ---
 
 ## 3. ECE346 Host Laptop Stack (SAFE_ROS2 / ECE346)
