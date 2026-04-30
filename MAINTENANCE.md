@@ -157,6 +157,72 @@ scp ~/StartUp/src/AprilTagSLAM_ROS/config/track_landmark.g2o \
 
 **Step 4 — Restart SLAM** on each truck so it reloads the updated map.
 
+### 2e. Obstacle AprilTag sizes — must match physical tag dimensions
+
+> ⚠️ **Required whenever obstacle tags of a different physical size are
+> introduced.** Wrong tag size in config silently inflates `cam_x` and
+> places the computed obstacle position far beyond its true location.
+
+The AprilTag detector uses monocular PnP — it computes distance from the
+tag's apparent pixel size and the **configured** physical size. If the
+configured size is wrong, every distance reading is scaled by
+`configured_size / actual_size`. Example: a 9.5cm tag configured as 0.2m
+reports distance 2.1× larger than reality. The "obstacle drifts as the
+truck moves" symptom is usually this, not SLAM drift.
+
+**Step 1 — Physically measure the tag's black-square edge length** with a
+ruler.
+
+**Step 2 — Add a per-range entry to `ignore_tags` in
+`config.yaml`** (and `mapping.yaml` if running mapping mode). The default
+0.2m only applies to tags not covered by any explicit range. Split the
+existing range to carve out the obstacle IDs:
+
+```yaml
+ignore_tags: [
+    {id_start: 39,  id_end: 99,    tag_size: 0.2},      # default
+    {id_start: 104, id_end: 199,   tag_size: 0.2},      # default
+    {id_start: 200, id_end: 220,   tag_size: 0.095},    # obstacle tags — measured
+    {id_start: 221, id_end: 10000, tag_size: 0.2},      # default
+]
+```
+
+**Step 3 — SCP `config.yaml` to all trucks**:
+```bash
+scp /home/calvin/Documents/apriltag_slam_zixu/AprilTagSLAM_ROS/config/config.yaml \
+    nvidia@192.168.1.2XX:~/StartUp/src/AprilTagSLAM_ROS/config/config.yaml
+```
+
+**Step 4 — Restart SLAM** on each truck.
+
+**Verify** — park the truck a measured distance from an obstacle tag,
+then on the host check the cam_x reading:
+```bash
+docker compose exec ros bash
+ros2 topic echo /SLAM/Tag_Detections_Dynamic --once | grep -A2 'pose:'
+# pose.position.x should match the measured distance to within a few cm
+```
+
+> The host-side `static_obs_size` parameter (in
+> `racecar_ece346/.../FinalProject/config/final_project_truck.yaml`) is a
+> **separate** value — it's the physical box size, used only for marker
+> visualization and the tag-face → box-center offset. It does NOT affect
+> the AprilTag distance computation.
+
+### 2f. Source of truth for SLAM configs
+
+The SLAM configs are edited locally on the host (in
+`/home/calvin/Documents/apriltag_slam_zixu/AprilTagSLAM_ROS/config/`) and
+pushed to each truck via SCP. The truck-side files at
+`~/StartUp/src/AprilTagSLAM_ROS/config/` are downstream copies — do not
+edit them directly unless you also push the same change back to the host
+copy, otherwise the next SCP from any other truck will overwrite your fix.
+
+Files maintained this way:
+- `config.yaml` — default SLAM config (used by `start_slam.sh`)
+- `mapping.yaml` — variant for building a new prior map
+- `track_landmark.g2o` — prior landmark positions
+
 ---
 
 ## 3. ECE346 Host Laptop Stack (SAFE_ROS2 / ECE346)
@@ -282,9 +348,11 @@ TagSLAM (ROS1)
   → safety_filter_node.py
 ```
 
-**Obstacle tag IDs**: tags 27–99 (the `ignore_tags` range in `config.yaml`).
-These are not used for localization but ARE detected and forwarded as
-obstacles.
+**Obstacle tag IDs**: any ID in an `ignore_tags` range in `config.yaml`
+(currently 39–99, 104–199, 200–220, 221+). These are not used for
+localization but ARE detected and forwarded as obstacles. The 200–220 block
+is reserved for the FinalProject obstacle tags (9.5 cm physical size — see
+§2e); other ranges default to 0.2m.
 
 **Verify the pipeline:**
 ```bash
@@ -304,6 +372,7 @@ Use this checklist when setting up or troubleshooting a specific truck.
 | Check JetPack | `cat /etc/nv_tegra_release` | R35 → CPU mode; R32 → GPU ok |
 | SLAM detector mode | `grep "type:" ~/StartUp/.../config.yaml` | `"CPU"` on R35 trucks |
 | pose_offset | `grep -A4 pose_offset ~/StartUp/.../config.yaml` | `-0.38, 0.0` |
+| Obstacle tag size | `grep -A2 'id_start: 200' ~/StartUp/.../config.yaml` | `tag_size: 0.095` (or measured value) |
 | racecar_msgs built | `python3 -c "from racecar_msgs.msg import AprilTagDetectionArray; print('OK')"` | OK |
 | SLAM running | `ros2 topic hz /SLAM/Pose` | ~15 Hz |
 | Tag bridge running | `ros2 topic hz /SLAM/Tag_Detections_Dynamic` | ~15 Hz (with tags in view) |
@@ -377,3 +446,24 @@ waits forever without publishing `/SLAM/Pose`.
 2. Verify bringup is running: `ros2 node list | grep control_gate`
 3. Hold **L2** (not R2) for teleop mode.
 4. Check VESC USB cable is connected.
+
+---
+
+### Obstacle marker drifts as the truck moves / appears beyond walls
+
+**Symptom**: In RViz, the `/Obstacles/Static` cube appears far from its
+true physical location (sometimes outside the track boundaries) when the
+truck is far away, and "snaps" closer to its real position as the truck
+approaches. Looks like SLAM drift but isn't.
+
+**Cause**: AprilTag `tag_size` in the SLAM config doesn't match the
+obstacle tag's physical size. The PnP solver inflates `cam_x` by
+`configured_size / actual_size`. A 9.5 cm tag configured as 0.2 m reports
+distances ~2.1× too large.
+
+**Fix**: See §2e. Measure the physical tag, add a per-range entry to
+`ignore_tags` in `config.yaml`, SCP to the Jetson, restart SLAM.
+
+**Quick check**: park the truck 1.0 m from the obstacle tag and inspect
+`cam_x` in `/SLAM/Tag_Detections_Dynamic`. It should read ~1.0 m. If it
+reads anything significantly different, tag size config is wrong.
